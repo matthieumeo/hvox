@@ -60,7 +60,7 @@ if __name__ == "__main__":
         times_are_ha=False,
     )
 
-    print("Simulating sky")
+    print("Loading sky GT")
     m31image = create_test_image(
         phasecentre=vis.phasecentre, frequency=np.r_[15e7], cellsize=5e-4
     )

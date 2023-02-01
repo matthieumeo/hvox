@@ -21,7 +21,7 @@ except:
 import hvox
 
 hvox_path = os.sep.join(os.path.abspath(hvox.__file__).split(os.sep)[:-3])
-os.environ["RASCIL_DATA"] = f"{hvox_path}/data/"
+os.environ["RASCIL_DATA"] = os.path.join(hvox_path, "data")
 
 
 def get_direction_cosines(image):

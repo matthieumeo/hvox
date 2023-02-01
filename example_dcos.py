@@ -95,7 +95,7 @@ if __name__ == "__main__":
             uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
             wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
-            wgt_dirty=wgt_dirty,
+            wgt_psf=wgt_dirty,
             chunked=True,
         )
         .reshape(m31image.pixels.shape)

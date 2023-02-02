@@ -1,5 +1,15 @@
 CHANGES
 =======
 
+* [authors/changelog][auto-update]
+* [example][BugFix] add visibility weights / mask
+* [tests][core] add test for main functions
+* [core][BugFix] add visibility weights / mask
+* [example\_hpix] add data
+* [example\_dcos] use generic separation (os.sep)
+* [example\_dcos] change print
+* [example\_dcos][bugfix] change arg\_name
+* [tests] add test structure
+* [DOC][BugFix] add correct url for pip-installation
 * Add content [setup, readme, doc, src, data, example]
 * Initial commit

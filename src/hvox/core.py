@@ -116,6 +116,7 @@ def dirty2vis(
     uvw_lambda,
     xyz,
     dirty,
+    wgt_vis=None,
     wgt_dirty=None,
     w_term=True,
     epsilon=1e-3,
@@ -137,6 +138,8 @@ def dirty2vis(
         Source coordinates from the measurement set
     dirty: np.ndarray(nsources)
         The input dirty image. Its dtype determines the precision at which computations are done
+    wgt_vis: np.ndarray(nbaselines, dtype=vis.dtype), optional
+        If present, its values are multiplied to the vis
     wgt_dirty: np.ndarray(nsources, dtype=dirty.dtype), optional
         If present, its values are multiplied to the dirty
     w_term: bool
@@ -210,7 +213,10 @@ def dirty2vis(
     # NUFFT Type 3
     vis = _nufft.nufft_dirty2vis(xyz_, uvw_, dirty_, epsilon, chunked, max_mem)
 
-    return vis
+    # Apply visibility weights
+    vis_ = vis * wgt_vis if wgt_vis is not None else vis
+
+    return vis_
 
 
 def compute_psf(

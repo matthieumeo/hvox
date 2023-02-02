@@ -72,12 +72,13 @@ if __name__ == "__main__":
         uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
         xyz=direction_cosines.reshape(-1, 3),
         dirty=m31image.pixels.data.reshape(-1),
+        wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
         wgt_dirty=wgt_dirty,
         chunked=True,
     )
 
     print("Estimating dirty image")
-    sky_estimate = (
+    dirty_estimate = (
         hvox.vis2dirty(
             uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     axs[1].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
     axs[1].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
     axs[1].set_title("Estimated PSF")
-    axs[2].imshow(sky_estimate, origin="lower", cmap="cubehelix")
+    axs[2].imshow(dirty_estimate, origin="lower", cmap="cubehelix")
     axs[2].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
     axs[2].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
     axs[2].set_title("Dirty")

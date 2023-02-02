@@ -167,7 +167,7 @@ class TestHVOX_dcos:
 
 
     def test_vis2dirty(self, ducc0_results, hvox_results, epsilon):
-        assert np.linalg.norm(ducc0_results[0].ravel() - hvox_results[0].ravel()) / np.linalg.norm(ducc0_results[0]) < epsilon
+        assert np.linalg.norm(ducc0_results[1].ravel() - hvox_results[1].ravel()) / np.linalg.norm(ducc0_results[1]) < epsilon
 
 def get_direction_cosines(image):
     _, _, _, npixel = image.pixels.data.shape

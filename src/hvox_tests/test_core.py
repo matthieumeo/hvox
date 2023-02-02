@@ -88,7 +88,7 @@ class TestHVOX_dcos:
             else:
                 return 1e-9
         else:
-            return 1e-1
+            return 1e-3
     @pytest.fixture(params=["ch-True", "ch-False"])
     def chunked(self, request):
         if request.param == "ch-True":

@@ -31,9 +31,9 @@ def vis2dirty(
         Source coordinates from the measurement set
     vis: np.ndarray(nbaselines)
         The input visibilities. Its dtype determines the precision at which computations are done
-    wgt_vis: np.ndarray(nbaselines, dtype=vis.dtype), optional
+    wgt_vis: np.ndarray(nbaselines, dtype=vis.dtype)
         If present, its values are multiplied to the vis
-    wgt_dirty: np.ndarray(nsources, dtype=dirty.dtype), optional
+    wgt_dirty: np.ndarray(nsources, dtype=dirty.dtype)
         If present, its values are multiplied to the dirty
     w_term: bool
         It False, drop the 3rd dimension in both domains (i.e., `w` and `z`) for the computation.

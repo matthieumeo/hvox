@@ -92,13 +92,8 @@ if __name__ == "__main__":
     )
     print("Estimating PSF")
     psf_estimate = (
-        hvox.compute_psf(
-            uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-            xyz=direction_cosines.reshape(-1, 3),
-            wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
-            wgt_psf=wgt_dirty,
-            chunked=True,
-        )
+        hvox.compute_psf(uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3), xyz=direction_cosines.reshape(-1, 3),
+                         wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1), wgt_psf=wgt_dirty, chunked=True)
         .reshape(m31image.pixels.shape)
         .squeeze()
     )
@@ -110,18 +105,21 @@ if __name__ == "__main__":
         figsize=(15, 4),
         subplot_kw={"projection": m31image.image_acc.wcs.sub([1, 2])},
     )
-    axs[0].imshow(m31image.pixels.data.squeeze(), origin="lower", cmap="cubehelix")
+    im1 = axs[0].imshow(m31image.pixels.data.squeeze(), origin="lower", cmap="cubehelix")
     axs[0].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
     axs[0].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
     axs[0].set_title("Sky (ground truth)")
-    axs[1].imshow(psf_estimate, origin="lower", cmap="cubehelix")
+    plt.colorbar(im1, ax=axs[0])
+    im2 = axs[1].imshow(psf_estimate, origin="lower", cmap="cubehelix")
     axs[1].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
     axs[1].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
     axs[1].set_title("Estimated PSF")
-    axs[2].imshow(dirty_estimate, origin="lower", cmap="cubehelix")
+    plt.colorbar(im2, ax=axs[1])
+    im3 = axs[2].imshow(dirty_estimate, origin="lower", cmap="cubehelix")
     axs[2].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
     axs[2].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
     axs[2].set_title("Dirty")
+    plt.colorbar(im3, ax=axs[2])
     plt.show()
 
     print("Done!")

@@ -1,0 +1,292 @@
+#!/usr/bin/env python
+
+import argparse
+import sys
+
+import numpy as np
+
+import hvox
+
+try:
+    import astropy.units as u
+    from astropy.coordinates import SkyCoord
+    from rascil.processing_components import (create_test_image,
+                                              create_visibility_from_ms,
+                                              show_image)
+    from ska_sdp_datamodels.configuration.config_create import \
+        create_named_configuration
+    from ska_sdp_datamodels.science_data_model.polarisation_model import \
+        PolarisationFrame
+    from ska_sdp_datamodels.visibility import create_visibility
+    from ska_sdp_func_python.imaging import create_image_from_visibility
+    from ska_sdp_func_python.util.coordinate_support import skycoord_to_lmn
+
+except:
+    raise ValueError("Missing packages")
+
+
+def vis2dirty(visibility, fov, npixel,
+              phasecentre, w_term, epsilon, chunked, max_mem, precision):
+
+    dtype_r = np.single if precision == "single" else np.double
+    dtype_c = np.csingle if precision == "single" else np.cdouble
+
+    nrows, nbaselines, vnchan, vnpol = visibility.vis.shape
+
+    image = create_image_from_visibility(
+        phasecentre=phasecentre,
+        vis=visibility,
+        npixel=npixel,
+        cellsize=fov/npixel,
+        nchan=vnchan,
+        polarisation_frame=visibility.visibility_acc.polarisation_frame
+    )
+
+    direction_cosines, jacobian = get_direction_cosines(image)
+    wgt_dirty = 1 / jacobian.reshape(-1)
+
+    for pol in range(vnpol):
+        for chan in range(vnchan):
+            image["pixels"].data[chan, pol] += (
+                hvox.vis2dirty(
+                    uvw_lambda=visibility.visibility_acc.uvw_lambda[:, :, chan, :].reshape(-1, 3),
+                    xyz=direction_cosines.reshape(-1, 3),
+                    vis=visibility.vis.data[:, :, chan, pol].reshape(-1).astype(dtype_c),
+                    wgt_vis=visibility.visibility_acc.flagged_weight[:, :, chan, pol].reshape(-1).astype(dtype_r),
+                    wgt_dirty=wgt_dirty.astype(dtype_r),
+                    w_term=w_term,
+                    epsilon=epsilon,
+                    chunked=chunked,
+                    max_mem=max_mem,
+                )
+                .reshape(npixel, npixel)
+            )
+    return image
+
+def get_direction_cosines(image):
+    _, _, ny, nx = image["pixels"].shape
+    lmesh, mmesh = np.meshgrid(np.arange(ny), np.arange(nx))
+    ra_grid, dec_grid = image.image_acc.wcs.sub([1, 2]).wcs_pix2world(lmesh, mmesh, 0)
+    ra_grid = np.deg2rad(ra_grid)
+    dec_grid = np.deg2rad(dec_grid)
+    directions = SkyCoord(
+        ra=ra_grid.ravel() * u.rad,
+        dec=dec_grid.ravel() * u.rad,
+        frame="icrs",
+        equinox="J2000",
+    )
+    l, m, _ = skycoord_to_lmn(directions, image.image_acc.phasecentre)
+    jacobian = np.sqrt(1 - l**2 - m**2)
+    direction_cosines = np.stack([l, m, jacobian - 1.0], axis=-1).reshape(-1, 3)
+    return direction_cosines, jacobian
+
+
+def create_parser():
+    """Create and return the argument parser of this script."""
+    parser = argparse.ArgumentParser(
+        description="Script that creates motage files for the digitized electrodes"
+    )
+
+    parser.add_argument(
+        "-m",
+        "--msname",
+        nargs=1,
+        type=str,
+        help="File name of MS"
+    )
+
+
+    parser.add_argument(
+        "-f",
+        "--fitsname",
+        nargs=1,
+        type=str,
+        help="File name of .fits file"
+    )
+
+    parser.add_argument(
+        "--ra",
+        nargs="?",
+        type=list,
+        help="Right ascention (RA) of dirty image, in DEG"
+    )
+
+    parser.add_argument(
+        "--dec",
+        nargs="?",
+        type=list,
+        help="Declination (DEC) of dirty images, in DEG"
+    )
+
+    parser.add_argument(
+        "--fov",
+        nargs="?",
+        type=float,
+        default=10.,
+        help="Field of View (diameter) of dirty image, in DEG"
+    )
+
+    parser.add_argument(
+        "--npixel",
+        nargs="?",
+        type=int,
+        default=512,
+        help="Number of pixels in each dimension of the 2d image"
+    )
+
+
+    parser.add_argument(
+        "--equinox",
+        nargs="?",
+        type=str,
+        default="J2000",
+        help="Coordinate frame equinox time, defaults to 'J2000'"
+    )
+
+    parser.add_argument(
+        "--frame",
+        nargs="?",
+        type=str,
+        default="icrs",
+        help="Type of coordinate framem defaults to 'ICRS' if not given"
+    )
+
+
+    parser.add_argument(
+        "-w",
+        "--w_term",
+        nargs="?",
+        type=bool,
+        default=True,
+        help="If True use the w-dimension, if False, use only a u,v-plane"
+    )
+
+    parser.add_argument(
+        "-e",
+        "--epsilon",
+        nargs="?",
+        type=float,
+        default=1e-3,
+        help="Requested accuracy"
+    )
+
+    parser.add_argument(
+        "-p",
+        "--precision",
+        nargs="?",
+        type=str,
+        default="single",
+        help="Requested precision for computation ('single' or 'double')"
+    )
+
+    parser.add_argument(
+        "-c",
+        "--chunked",
+        nargs="?",
+        type=bool,
+        default=True,
+        help="Use HVOX partitioning strategy"
+    )
+
+    parser.add_argument(
+        "--max_mem",
+        nargs="?",
+        type=int,
+        default=500,
+        help="Maximum size for per HVOX chunk, in MB"
+    )
+
+    parser.add_argument(
+        "--start_chan",
+        nargs="?",
+        type=int,
+        help="Starting channel to read"
+    )
+    parser.add_argument(
+        "--end_chan",
+        nargs="?",
+        type=int,
+        help="End channel to read"
+    )
+
+    parser.add_argument(
+        "--casacore",
+        nargs="?",
+        type=bool,
+        default=False,
+        help="Ask casacore to acknowledge each table operation"
+    )
+
+    parser.add_argument(
+        "--datacolumn",
+        nargs="?",
+        type=str,
+        default="DATA",
+        help="MS data column to read DATA, CORRECTED_DATA, or MODEL_DATA"
+    )
+
+    parser.add_argument(
+        "-a",
+        "--average_channels",
+        nargs="?",
+        type=bool,
+        default=False,
+        help="Average all channels read"
+    )
+
+    return parser
+
+
+def main():
+    parser = create_parser()
+    args = parser.parse_args()
+
+    msname, fits_name = args.msname[0], args.fitsname[0]
+
+    if (args.start_chan is not None) and (args.end_chan is not None):
+        channum = range(args.start_chan, args.end_chan + 1)
+    else:
+        channum = None
+
+    ack, datacolumn, average_channels = args.casacore, args.datacolumn, args.average_channels
+
+    # Create visibility object from ms
+    visibilities = create_visibility_from_ms(msname=msname, channum=channum, ack=ack, datacolumn=datacolumn,
+                                           average_channels=average_channels)
+
+    ra, dec, frame, equinox = args.ra, args.dec, args.frame, args.equinox
+
+
+    if (ra is not None) & (dec is not None):
+        phasecentre = []
+        if isinstance(ra, list):
+            for ra_, dec_ in zip(ra, dec):
+                phasecentre.append(SkyCoord(ra=ra_ * u.rad, dec=dec_ * u.rad, frame=frame, equinox=equinox))
+        else:
+            phasecentre.append(SkyCoord(ra=ra * u.rad, dec=dec * u.rad, frame=frame, equinox=equinox))
+    else:
+        phasecentre = [visibility.phasecentre for visibility in visibilities]
+
+    fov, npixel = args.fov, args.npixel
+
+    for i, visibility in enumerate(visibilities):
+        image = vis2dirty(
+            visibility=visibility,
+            fov=fov * np.pi / 180, # in radians
+            npixel=npixel,
+            phasecentre=phasecentre[i],
+            w_term=args.w_term,
+            epsilon=args.epsilon,
+            chunked=args.chunked,
+            max_mem=args.max_mem,
+            precision=args.precision)
+        field_id = visibility.meta['MSV2']['FIELD_ID']
+        data_desc_id = visibility.meta['MSV2']['DATA_DESC_ID']
+        fits_fname = f"{fits_name}_FIELD_ID-{field_id}_DATA_DESC_ID-{data_desc_id}.fits"
+        image.image_acc.export_to_fits(fits_fname)
+
+    exit_code = 2
+    return exit_code
+
+if __name__ == "__main__":
+    sys.exit(main())

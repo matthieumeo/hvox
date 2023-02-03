@@ -116,6 +116,7 @@ def dirty2vis(
     uvw_lambda,
     xyz,
     dirty,
+    mesh="dcos",
     wgt_vis=None,
     wgt_dirty=None,
     w_term=True,
@@ -199,7 +200,7 @@ def dirty2vis(
 
     """
 
-    # wgt_dirty = 1 / jacobian
+
 
     nrows, _ = uvw_lambda.shape
 
@@ -207,9 +208,13 @@ def dirty2vis(
     uvw_ = uvw_lambda if w_term else uvw_lambda[:, :-1]
     xyz_ = xyz if w_term else xyz[:, :-1]
 
-    # Apply dirty weights
-    dirty_ = dirty * wgt_dirty if wgt_dirty is not None else dirty
-
+    if mesh == "dcos":
+        # Apply dirty weights
+        dirty_ = dirty * wgt_dirty if wgt_dirty is not None else dirty
+    elif mesh == "hpix":
+        raise NotImplementedError
+    else:
+        ra
     # NUFFT Type 3
     vis = _nufft.nufft_dirty2vis(xyz_, uvw_, dirty_, epsilon, chunked, max_mem)
 

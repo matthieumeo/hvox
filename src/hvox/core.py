@@ -309,8 +309,8 @@ def compute_psf(
 
 
     dtype = np.csingle if np.issubdtype(uvw_lambda.dtype, np.single) else np.cdouble
-    # vis = np.ones(uvw_lambda.shape[0], dtype=dtype)
-    phase_center = np.exp(-1j * 2 * np.pi * (uvw_lambda.dot(xyz_center)))
+
+    phase_center = np.exp(-1j * 2 * np.pi * (uvw_lambda.dot(xyz_center))).astype(dtype)
     return vis2dirty(
         uvw_lambda,
         xyz,

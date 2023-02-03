@@ -115,7 +115,7 @@ class TestHVOX_dcos:
             uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
             vis=vis_hvox.reshape(-1),
-            wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1).astype(model.pixels.data.dtype),
+            wgt_vis=None,
             wgt_dirty=wgt_dirty.astype(model.pixels.data.dtype),
             w_term=w_term,
             epsilon=epsilon,

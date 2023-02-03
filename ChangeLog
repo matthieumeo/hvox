@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+* [example\_hpix] update WIP
+* [example\_hpix] add WIP
+* [test][core] change epsilon for w-term=False
+* [tests][core][BugFix] test dirty images too
+* [core][doc] homogenize
+* [changelog][auto-update]
+* [doc] update index and references
+* [doc] add methods description
 * [authors/changelog][auto-update]
 * [example][BugFix] add visibility weights / mask
 * [tests][core] add test for main functions

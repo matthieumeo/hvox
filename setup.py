@@ -5,4 +5,8 @@ Setup script.
 """
 import setuptools
 
-setuptools.setup(setup_requires=["pbr"], pbr=True)
+setuptools.setup(
+    setup_requires=["pbr"],
+    pbr=True,
+    scripts=["bin/ms2fits"],
+)

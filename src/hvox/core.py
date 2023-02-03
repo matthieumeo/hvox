@@ -68,6 +68,7 @@ def vis2dirty(
 
        rng = np.random.default_rng(0)
        uvw_lambda = rng.random((20, 3)) - 0.5
+       uvw_lambda = np.concatenate((uvw_lambda, -uvw_lambda), 0)
        x = np.linspace(0, 1, 25)
        xx, yy = np.meshgrid(x, x)
        zz = np.ones_like(xx)
@@ -176,6 +177,7 @@ def dirty2vis(
 
        rng = np.random.default_rng(0)
        uvw_lambda = rng.random((20, 3)) - 0.5
+       uvw_lambda = np.concatenate((uvw_lambda, -uvw_lambda), 0)
        x = np.linspace(0, 1, 25)
        xx, yy = np.meshgrid(x, x)
        zz = np.ones_like(xx)
@@ -281,6 +283,7 @@ def compute_psf(
 
        rng = np.random.default_rng(0)
        uvw_lambda = rng.random((20, 3)) - 0.5
+       uvw_lambda = np.concatenate((uvw_lambda, -uvw_lambda), 0)
        x = np.linspace(0, 1, 25)
        xx, yy = np.meshgrid(x, x)
        zz = np.ones_like(xx)

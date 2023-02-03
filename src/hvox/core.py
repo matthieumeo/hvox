@@ -227,6 +227,7 @@ def dirty2vis(
 def compute_psf(
     uvw_lambda,
     xyz,
+    xyz_center = np.array([0.,0.,0.]),
     wgt_vis=None,
     wgt_psf=None,
     w_term=True,
@@ -299,12 +300,18 @@ def compute_psf(
     :py:func:`~hvox.core.dirty2vis`, :py:func:`~hvox.core.dirty2vis`
 
     """
+
+    # Direction cosines:
+    # PSF = (1 / (Npix**2)) * (1/jacobian) * (1/jacobian[xyz0]) * NUFFT_adjoint * phase(xyz0)
+
+
     dtype = np.csingle if np.issubdtype(uvw_lambda.dtype, np.single) else np.cdouble
-    vis = np.ones(uvw_lambda.shape[0], dtype=dtype)
+    # vis = np.ones(uvw_lambda.shape[0], dtype=dtype)
+    phase_center = np.exp(-1j * 2 * np.pi * (uvw_lambda.dot(xyz_center)))
     return vis2dirty(
         uvw_lambda,
         xyz,
-        vis,
+        phase_center,
         wgt_vis=wgt_vis,
         wgt_dirty=wgt_psf,
         w_term=w_term,
@@ -312,3 +319,4 @@ def compute_psf(
         chunked=chunked,
         max_mem=max_mem,
     )
+

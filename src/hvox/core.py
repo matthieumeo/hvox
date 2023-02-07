@@ -6,11 +6,12 @@ __all__ = ["vis2dirty", "dirty2vis", "compute_psf"]
 
 
 def vis2dirty(
-    uvw_lambda,
+    uvw,
     xyz,
     vis,
-    wgt_vis=None,
-    wgt_dirty=None,
+    mesh="dcos",
+    wgt=None,
+    normalisation="xyz",
     w_term=True,
     epsilon=1e-3,
     chunked=False,
@@ -25,7 +26,7 @@ def vis2dirty(
 
     Parameters
     ----------
-    uvw_lambda: np.ndarray((nbaselines, 3))
+    uvw: np.ndarray((nbaselines, 3))
         UVW coordinates from the measurement set, in wavelengths
     xyz: np.ndarray((nsources, 3))
         Source coordinates from the measurement set
@@ -92,33 +93,37 @@ def vis2dirty(
 
     """
 
-    # wgt_vis = flagged_weight
-    # wgt_dirty = 1 / jacobian
-
     # Remove w_term if asked
-    uvw_ = uvw_lambda if w_term else uvw_lambda[:, :-1]
+    uvw_ = uvw if w_term else uvw[:, :-1]
     xyz_ = xyz if w_term else xyz[:, :-1]
 
-    # Apply visibility weights
-    vis_ = vis * wgt_vis if wgt_vis is not None else vis
+    # Apply visibility weights (flagged weights)
+    vis_ = vis * wgt if wgt is not None else vis
 
     # NUFFT Type 3
     dirty = _nufft.nufft_vis2dirty(xyz_, uvw_, vis_, epsilon, chunked, max_mem)
 
     # Apply dirty weights
-    wgt_dirty = wgt_dirty if wgt_dirty is not None else np.ones_like(dirty)
-    wgt_dirty = wgt_dirty / wgt_vis.sum() if wgt_vis is not None else wgt_dirty
-    dirty *= wgt_dirty
+    if mesh == "dcos":
+        jacobian = xyz[:, -1] + 1.0
+        dirty /= jacobian
+
+    if normalisation is not None:
+        if normalisation in ["uvw", "both"]:
+            dirty /= wgt.sum() if wgt is not None else len(uvw)
+        if normalisation in ["xyz", "both"]:
+            dirty /= len(xyz)
 
     return dirty
 
 
 def dirty2vis(
-    uvw_lambda,
+    uvw,
     xyz,
     dirty,
-    wgt_vis=None,
-    wgt_dirty=None,
+    mesh="dcos",
+    wgt=None,
+    normalisation="xyz",
     w_term=True,
     epsilon=1e-3,
     chunked=False,
@@ -133,7 +138,7 @@ def dirty2vis(
 
     Parameters
     ----------
-    uvw_lambda: np.ndarray((nbaselines, 3))
+    uvw: np.ndarray((nbaselines, 3))
         UVW coordinates from the measurement set, in wavelengths
     xyz: np.ndarray((nsources, 3))
         Source coordinates from the measurement set
@@ -201,32 +206,39 @@ def dirty2vis(
 
     """
 
-
-
-    nrows, _ = uvw_lambda.shape
+    nrows, _ = uvw.shape
 
     # Remove w_term if asked
-    uvw_ = uvw_lambda if w_term else uvw_lambda[:, :-1]
+    uvw_ = uvw if w_term else uvw[:, :-1]
     xyz_ = xyz if w_term else xyz[:, :-1]
 
     # Apply dirty weights
-    dirty_ = dirty * wgt_dirty if wgt_dirty is not None else dirty
+    if mesh == "dcos":
+        jacobian = xyz[:, -1] + 1.0
+        dirty /= jacobian
 
     # NUFFT Type 3
-    vis = _nufft.nufft_dirty2vis(xyz_, uvw_, dirty_, epsilon, chunked, max_mem)
+    vis = _nufft.nufft_dirty2vis(xyz_, uvw_, dirty, epsilon, chunked, max_mem)
 
     # Apply visibility weights
-    vis_ = vis * wgt_vis if wgt_vis is not None else vis
+    vis_ = vis * wgt if wgt is not None else vis
+
+    if normalisation is not None:
+        if normalisation in ["uvw", "both"]:
+            vis_ /= wgt.sum() if wgt is not None else len(uvw)
+        if normalisation in ["xyz", "both"]:
+            vis_ /= len(xyz)
 
     return vis_
 
 
 def compute_psf(
-    uvw_lambda,
+    uvw,
     xyz,
-    xyz_center = np.array([0.,0.,0.]),
-    wgt_vis=None,
-    wgt_psf=None,
+    xyz_center=np.array([0.0, 0.0, 0.0]),
+    mesh="dcos",
+    wgt=None,
+    normalisation="both",
     w_term=True,
     epsilon=1e-3,
     chunked=False,
@@ -241,7 +253,7 @@ def compute_psf(
 
     Parameters
     ----------
-    uvw_lambda: np.ndarray((nbaselines, 3))
+    uvw: np.ndarray((nbaselines, 3))
         UVW coordinates from the measurement set, in wavelengths
     xyz: np.ndarray((nsources, 3))
         Source coordinates from the measurement set
@@ -299,22 +311,25 @@ def compute_psf(
 
     """
 
-    # Direction cosines:
-    # PSF = (1 / (Npix**2)) * (1/jacobian) * (1/jacobian[xyz0]) * NUFFT_adjoint * phase(xyz0)
+    dtype = np.csingle if np.issubdtype(uvw.dtype, np.single) else np.cdouble
 
+    phase_center = np.exp(-1j * 2 * np.pi * (uvw.dot(xyz_center))).astype(dtype)
 
-    dtype = np.csingle if np.issubdtype(uvw_lambda.dtype, np.single) else np.cdouble
+    if mesh == "dcos":
+        # Direction cosines:
+        # PSF = (1 / (Npix**2)) * (1/jacobian) * (1/jacobian[xyz0]) * NUFFT_adjoint * phase(xyz0)
+        jacobian = xyz_center[..., -1] + 1.0
+        phase_center /= jacobian
 
-    phase_center = np.exp(-1j * 2 * np.pi * (uvw_lambda.dot(xyz_center))).astype(dtype)
     return vis2dirty(
-        uvw_lambda,
+        uvw,
         xyz,
         phase_center,
-        wgt_vis=wgt_vis,
-        wgt_dirty=wgt_psf,
+        mesh=mesh,
+        wgt=wgt,
+        normalisation=normalisation,
         w_term=w_term,
         epsilon=epsilon,
         chunked=chunked,
         max_mem=max_mem,
     )
-

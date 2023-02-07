@@ -44,7 +44,6 @@ def get_direction_cosines(image):
 
 
 if __name__ == "__main__":
-
     print("Allocating visibilities / Creating Low-SKA configuration")
     lowr3 = create_named_configuration("LOWBD2", rmax=3_000.0)
     vis = create_visibility(
@@ -69,22 +68,22 @@ if __name__ == "__main__":
 
     print("Simulating visibilities")
     vis_estimate = hvox.dirty2vis(
-        uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+        uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
         xyz=direction_cosines.reshape(-1, 3),
         dirty=m31image.pixels.data.reshape(-1),
-        wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
-        wgt_dirty=wgt_dirty,
+        wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+        normalisation="xyz",
         chunked=True,
     )
 
     print("Estimating dirty image")
     dirty_estimate = (
         hvox.vis2dirty(
-            uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
             vis=vis_estimate.reshape(-1),
-            wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
-            wgt_dirty=wgt_dirty,
+            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+            normalisation="xyz",
             chunked=True,
         )
         .reshape(m31image.pixels.shape)
@@ -92,8 +91,13 @@ if __name__ == "__main__":
     )
     print("Estimating PSF")
     psf_estimate = (
-        hvox.compute_psf(uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3), xyz=direction_cosines.reshape(-1, 3),
-                         wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1), wgt_psf=wgt_dirty, chunked=True)
+        hvox.compute_psf(
+            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            xyz=direction_cosines.reshape(-1, 3),
+            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+            normalisation="both",
+            chunked=False,
+        )
         .reshape(m31image.pixels.shape)
         .squeeze()
     )
@@ -105,7 +109,9 @@ if __name__ == "__main__":
         figsize=(15, 4),
         subplot_kw={"projection": m31image.image_acc.wcs.sub([1, 2])},
     )
-    im1 = axs[0].imshow(m31image.pixels.data.squeeze(), origin="lower", cmap="cubehelix")
+    im1 = axs[0].imshow(
+        m31image.pixels.data.squeeze(), origin="lower", cmap="cubehelix"
+    )
     axs[0].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
     axs[0].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
     axs[0].set_title("Sky (ground truth)")
@@ -123,3 +129,82 @@ if __name__ == "__main__":
     plt.show()
 
     print("Done!")
+
+    from ska_sdp_func_python.imaging import invert_ng, predict_ng
+
+    vis_ng = vis.copy(deep=True)
+    vis_ng = predict_ng(vis_ng, m31image)
+    vis_estimate = hvox.dirty2vis(
+        uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+        xyz=direction_cosines.reshape(-1, 3),
+        dirty=m31image.pixels.data.reshape(-1),
+        wgt=None,
+        normalisation=None,
+        chunked=True,
+    )
+
+    plt.scatter(vis_ng.vis.data.ravel(), vis_estimate.ravel())
+    plt.xlabel("NG"), plt.ylabel("HVOX")
+    plt.show()
+
+    dirty_ng = m31image.copy(deep=True)
+    dirty_ng = invert_ng(vis_ng, dirty_ng, dopsf=False, normalise=True)
+    psf_ng = m31image.copy(deep=True)
+    psf_ng = invert_ng(vis_ng, psf_ng, dopsf=True, normalise=True)
+    dirty_estimate = (
+        hvox.vis2dirty(
+            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            xyz=direction_cosines.reshape(-1, 3),
+            vis=vis_estimate.reshape(-1),
+            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+            normalisation="uvw",
+            chunked=True,
+        )
+        .reshape(m31image.pixels.shape)
+        .squeeze()
+    )
+
+    psf_estimate = (
+        hvox.compute_psf(
+            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            xyz=direction_cosines.reshape(-1, 3),
+            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+            normalisation="uvw",
+            chunked=True,
+        )
+        .reshape(m31image.pixels.shape)
+        .squeeze()
+    )
+
+    fig, axs = plt.subplots(
+        2,
+        2,
+        figsize=(10, 10),
+        subplot_kw={"projection": m31image.image_acc.wcs.sub([1, 2])},
+    )
+    im1 = axs[0, 0].imshow(
+        dirty_ng[0].pixels.data.squeeze(), origin="lower", cmap="cubehelix"
+    )
+    axs[0, 0].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
+    axs[0, 0].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
+    axs[0, 0].set_title("DIRTY NG")
+    plt.colorbar(im1, ax=axs[0, 0])
+    im2 = axs[0, 1].imshow(
+        psf_ng[0].pixels.data.squeeze(), origin="lower", cmap="cubehelix"
+    )
+    axs[0, 1].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
+    axs[0, 1].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
+    axs[0, 1].set_title("PSF NG")
+    plt.colorbar(im2, ax=axs[0, 1])
+
+    im1 = axs[1, 0].imshow(dirty_estimate, origin="lower", cmap="cubehelix")
+    axs[1, 0].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
+    axs[1, 0].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
+    axs[1, 0].set_title("DIRTY HVOX")
+    plt.colorbar(im1, ax=axs[1, 0])
+    im2 = axs[1, 1].imshow(psf_estimate, origin="lower", cmap="cubehelix")
+    axs[1, 1].set_xlabel(m31image.image_acc.wcs.wcs.ctype[0])
+    axs[1, 1].set_ylabel(m31image.image_acc.wcs.wcs.ctype[1])
+    axs[1, 1].set_title("PSF HVOX")
+    plt.colorbar(im2, ax=axs[1, 1])
+    plt.show()

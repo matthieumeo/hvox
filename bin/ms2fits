@@ -48,17 +48,10 @@ def vis2dirty(visibility, fov, npixel,
     for pol in range(vnpol):
         for chan in range(vnchan):
             image["pixels"].data[chan, pol] += (
-                hvox.vis2dirty(
-                    uvw_lambda=visibility.visibility_acc.uvw_lambda[:, :, chan, :].reshape(-1, 3),
-                    xyz=direction_cosines.reshape(-1, 3),
-                    vis=visibility.vis.data[:, :, chan, pol].reshape(-1).astype(dtype_c),
-                    wgt_vis=visibility.visibility_acc.flagged_weight[:, :, chan, pol].reshape(-1).astype(dtype_r),
-                    wgt_dirty=wgt_dirty.astype(dtype_r),
-                    w_term=w_term,
-                    epsilon=epsilon,
-                    chunked=chunked,
-                    max_mem=max_mem,
-                )
+                hvox.vis2dirty(uvw=visibility.visibility_acc.uvw_lambda[:, :, chan, :].reshape(-1, 3),
+                               xyz=direction_cosines.reshape(-1, 3),
+                               vis=visibility.vis.data[:, :, chan, pol].reshape(-1).astype(dtype_c), w_term=w_term,
+                               epsilon=epsilon, chunked=chunked, max_mem=max_mem)
                 .reshape(npixel, npixel)
             )
     return image

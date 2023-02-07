@@ -1,9 +1,9 @@
 import numpy as np
 
 try:
-    import pytest
-    import ducc0.wgridder.experimental as wgridder
     import astropy.units as u
+    import ducc0.wgridder.experimental as wgridder
+    import pytest
     from astropy.coordinates import SkyCoord
     from rascil.processing_components import create_test_image, show_image
     from ska_sdp_datamodels.configuration.config_create import (
@@ -89,6 +89,7 @@ class TestHVOX_dcos:
                 return 1e-9
         else:
             return 1e-3
+
     @pytest.fixture(params=["ch-True", "ch-False"])
     def chunked(self, request):
         if request.param == "ch-True":
@@ -98,10 +99,17 @@ class TestHVOX_dcos:
 
     @pytest.fixture
     def hvox_results(
-        self, vis, direction_cosines, model, wgt_dirty, w_term, epsilon, chunked,
+        self,
+        vis,
+        direction_cosines,
+        model,
+        wgt_dirty,
+        w_term,
+        epsilon,
+        chunked,
     ):
         vis_hvox = hvox.dirty2vis(
-            uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
             dirty=model.pixels.data.reshape(-1),
             wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
@@ -112,11 +120,9 @@ class TestHVOX_dcos:
         )
 
         dirty_hvox = hvox.vis2dirty(
-            uvw_lambda=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
             vis=vis_hvox.reshape(-1),
-            wgt_vis=None,
-            wgt_dirty=wgt_dirty.astype(model.pixels.data.dtype),
             w_term=w_term,
             epsilon=epsilon,
             chunked=chunked,
@@ -125,9 +131,11 @@ class TestHVOX_dcos:
 
     @pytest.fixture
     def ducc0_results(
-            self,
-            vis, model,
-            epsilon, w_term,
+        self,
+        vis,
+        model,
+        epsilon,
+        w_term,
     ):
         npixels = model.pixels.shape[-1]
         pixsize = np.abs(np.radians(model.image_acc.wcs.wcs.cdelt[0]))
@@ -138,7 +146,9 @@ class TestHVOX_dcos:
             uvw=fuvw,
             freq=vis.frequency.data,
             dirty=model.pixels.data.squeeze().T,
-            wgt=vis.visibility_acc.flagged_weight.reshape(-1, 1).astype(model.pixels.data.dtype),
+            wgt=vis.visibility_acc.flagged_weight.reshape(-1, 1).astype(
+                model.pixels.data.dtype
+            ),
             pixsize_x=pixsize,
             pixsize_y=pixsize,
             epsilon=epsilon,
@@ -163,11 +173,15 @@ class TestHVOX_dcos:
         return vis_ducc0, dirty_ducc0
 
     def test_dirty2vis(self, ducc0_results, hvox_results, epsilon):
-        assert np.linalg.norm(ducc0_results[0].ravel() - hvox_results[0].ravel()) / np.linalg.norm(ducc0_results[0]) < 2 * (epsilon * 10)
-
+        assert np.linalg.norm(
+            ducc0_results[0].ravel() - hvox_results[0].ravel()
+        ) / np.linalg.norm(ducc0_results[0]) < 2 * (epsilon * 10)
 
     def test_vis2dirty(self, ducc0_results, hvox_results, epsilon):
-        assert np.linalg.norm(ducc0_results[1].ravel() - hvox_results[1].ravel()) / np.linalg.norm(ducc0_results[1]) < 2 * (epsilon * 10)
+        assert np.linalg.norm(
+            ducc0_results[1].ravel() - hvox_results[1].ravel()
+        ) / np.linalg.norm(ducc0_results[1]) < 2 * (epsilon * 10)
+
 
 def get_direction_cosines(image):
     _, _, _, npixel = image.pixels.data.shape

@@ -30,7 +30,7 @@ def nufft_builder(xyz, vlambda, epsilon, chunked, max_mem):
 
     if chunked:
         # auto-determine a good x/z chunking strategy
-        nufft.allocate(*nufft.auto_chunk(max_mem=max_mem), enable_warnings=False)
+        nufft.allocate(*nufft.auto_chunk(max_mem=max_mem))
         xyz_idx, xyz_chunks = nufft.order("x")  # get a good x-ordering
         uvw_lambda_idx, uvw_lambda_chunks = nufft.order("z")  # get a good z-ordering
         nufft = pycl.NUFFT.type3(

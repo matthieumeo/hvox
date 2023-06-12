@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+* update authors
+* ignore tart-related files
+* [bugfix] update nufft call after NUFFT args update
+* update dependencies
+* update changelog
 * add healpix example
 * ref. and add support for mesh=="dcos"
 * remove hpx example (tmp)

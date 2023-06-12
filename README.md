@@ -7,32 +7,25 @@
 [![PyPI](https://img.shields.io/pypi/v/hvox.svg?color=green)](https://pypi.org/project/hvox)
 [![Python Version](https://img.shields.io/pypi/pyversions/hvox.svg?color=green)](https://python.org)
 
-Python reference implementation of the HVOX gridder for mesh-agnostic wide-field interferometry.
+Python reference implementation of the HVOX gridder for mesh-agnostic wide-field interferometry [1].
 
 ----------------------------------
 
 ## Installation
 
-    # Install Pycsou-v2-dev (under development)
+    # Create conda environment 
     my_env=<CONDA ENVIRONMENT NAME>
+    conda create --name "${my_env}"
     
-    # Create conda environment and setup dependencies 
-    git clone https://github.com/matthieumeo/pycsou && cd pycsou/
-    git checkout "v2-dev"
-    conda create --name "${my_env}"            \
-                 --strict-channel-priority     \
-                 --channel=conda-forge         \
-                 --file=conda/requirements.txt
-    
-    # Activate environment and install Pycsou-v2 (under development) 
-    conda activate "${my_env}"
-    python3 -m pip install .
-    
-    # Install HVox 
-    cd ../
-    git clone https://github.com/matthieumeo/hvox && cd hvox/
-    python3 -m pip install .
+    # Install HVOX
+    python -m pip install git+https://github.com/matthieumeo/hvox" 
 
+    # Install additional dependencies to run examples and CLI  
+    python -m pip install --index-url=https://artefact.skao.int/repository/pypi-all/simple rascil
+    python -m pip install healpy
+
+    # Developer Install HVOX
+    python -m pip install "hvox[dev] @ git+https://github.com/matthieumeo/hvox" 
 
 ## Contributing
 
@@ -55,3 +48,7 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [tox]: https://tox.readthedocs.io/en/latest/
 [pip]: https://pypi.org/project/pip/
 [PyPI]: https://pypi.org/
+
+## References
+
+[1] Kashani, S., Queralt, J. R., Jarret, A., & Simeoni, M. (2023). HVOX: Scalable Interferometric Synthesis and Analysis of Spherical Sky Maps. arXiv [Cs.CE]. Retrieved from http://arxiv.org/abs/2306.06007

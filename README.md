@@ -1,4 +1,4 @@
-.. image:: https://matthieumeo.github.io/pycsou/html/_images/hvox.png
+.. image:: https://matthieumeo.github.io/hvox/html/_images/hvox.png
   :width: 50 %
   :align: center
   :target: https://matthieumeo.github.io/hvox/html/index

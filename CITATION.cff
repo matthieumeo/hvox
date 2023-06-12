@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+title: >-
+  HVOX: Scalable Interferometric Synthesis and Analysis of
+  Spherical Sky Maps.
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Sepand
+    family-names: Kashani
+    email: sepand.kashani@epfl.ch
+    affiliation: EPFL
+  - given-names: Joan
+    family-names: Rue Queralt
+    email: joan.ruequeralt@epfl.ch
+    affiliation: EPFL
+  - given-names: Adrian
+    family-names: Jarret
+    email: adrian.jarret@epfl.ch
+    affiliation: EPFL
+  - given-names: Matthieu
+    family-names: Simeoni
+    email: matthieu.simeoni@epfl.ch
+    affiliation: EPFL
+identifiers:
+  - type: doi
+    value: 10.48550/arXiv.2306.06007
+    description: DOI of manuscript pre-print.
+repository-code: 'https://github.com/matthieumeo/hvox'
+abstract: >-
+  Python reference implementation of the HVOX gridder for
+  mesh-agnostic wide-field interferometry.
+license: MIT

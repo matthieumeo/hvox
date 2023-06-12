@@ -1,6 +1,24 @@
 CHANGES
 =======
 
+* add healpix example
+* ref. and add support for mesh=="dcos"
+* remove hpx example (tmp)
+* [tests][BugFix] change epsilon to 2x requested (1x per method)
+* [tests][BugFix] remove 1/Nvis factor to match ducc0 result
+* remove mesh argument (tmp)
+* add phase center precision
+* add symmetric baselines examples
+* modify requirements
+* add phase center in example
+* add installation instructions
+* add psf-center
+* add mesh=dcos option
+* [changelog] update
+* [build] add pyproject.toml
+* [cli] add ms2fits
+* [setup] add cli
+* [setup] update pycsou requirement
 * [example\_hpix] update WIP
 * [example\_hpix] add WIP
 * [test][core] change epsilon for w-term=False

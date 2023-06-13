@@ -51,4 +51,4 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 
 ## References
 
-[1] Kashani, S., Queralt, J. R., Jarret, A., & Simeoni, M. (2023). HVOX: Scalable Interferometric Synthesis and Analysis of Spherical Sky Maps. arXiv [Cs.CE]. Retrieved from http://arxiv.org/abs/2306.06007
+[1] [HVOXpaper]Kashani, S., Queralt, J. R., Jarret, A., & Simeoni, M. (2023). HVOX: Scalable Interferometric Synthesis and Analysis of Spherical Sky Maps. arXiv [Cs.CE]. Retrieved from http://arxiv.org/abs/2306.06007

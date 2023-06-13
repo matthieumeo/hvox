@@ -16,7 +16,7 @@ try:
     from ska_sdp_datamodels.visibility import create_visibility
     from ska_sdp_func_python.util.coordinate_support import skycoord_to_lmn
 except:
-    raise ValueError("Missing packages")
+    raise ValueError("Missing packages. To run example install the additional dependencies (see repository README)")
 
 import hvox
 
@@ -67,34 +67,33 @@ if __name__ == "__main__":
     wgt_dirty = 1 / jacobian.reshape(-1)
 
     print("Simulating visibilities")
-    vis_estimate = hvox.dirty2vis(
-        uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-        xyz=direction_cosines.reshape(-1, 3),
-        dirty=m31image.pixels.data.reshape(-1),
-        wgt=vis.visibility_acc.flagged_weight.reshape(-1),
-        normalisation="xyz",
-        chunked=True,
-    )
+    vis_estimate = hvox.dirty2vis(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+                                  xyz=direction_cosines.reshape(-1, 3),
+                                  dirty=m31image.pixels.data.reshape(-1),
+                                  wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
+                                  wgt_dirty=wgt_dirty,
+                                  normalisation="xyz",
+                                  chunked=True)
 
     print("Estimating dirty image")
     dirty_estimate = (
-        hvox.vis2dirty(
-            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-            xyz=direction_cosines.reshape(-1, 3),
-            vis=vis_estimate.reshape(-1),
-            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
-            normalisation="xyz",
-            chunked=True,
-        )
+        hvox.vis2dirty(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+                       xyz=direction_cosines.reshape(-1, 3),
+                       vis=vis_estimate.reshape(-1),
+                       wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
+                       wgt_dirty=wgt_dirty,
+                       normalisation="xyz",
+                       chunked=True)
         .reshape(m31image.pixels.shape)
         .squeeze()
     )
     print("Estimating PSF")
     psf_estimate = (
         hvox.compute_psf(
-            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
-            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+            wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
+            wgt_dirty=wgt_dirty,
             normalisation="both",
             chunked=False,
         )
@@ -134,14 +133,8 @@ if __name__ == "__main__":
 
     vis_ng = vis.copy(deep=True)
     vis_ng = predict_ng(vis_ng, m31image)
-    vis_estimate = hvox.dirty2vis(
-        uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-        xyz=direction_cosines.reshape(-1, 3),
-        dirty=m31image.pixels.data.reshape(-1),
-        wgt=None,
-        normalisation=None,
-        chunked=True,
-    )
+    vis_estimate = hvox.dirty2vis(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+                                  xyz=direction_cosines.reshape(-1, 3), dirty=m31image.pixels.data.reshape(-1), normalisation=None, chunked=True)
 
     plt.scatter(vis_ng.vis.data.ravel(), vis_estimate.ravel())
     plt.xlabel("NG"), plt.ylabel("HVOX")
@@ -152,23 +145,19 @@ if __name__ == "__main__":
     psf_ng = m31image.copy(deep=True)
     psf_ng = invert_ng(vis_ng, psf_ng, dopsf=True, normalise=True)
     dirty_estimate = (
-        hvox.vis2dirty(
-            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-            xyz=direction_cosines.reshape(-1, 3),
-            vis=vis_estimate.reshape(-1),
-            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
-            normalisation="uvw",
-            chunked=True,
-        )
+        hvox.vis2dirty(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3), xyz=direction_cosines.reshape(-1, 3),
+                       vis=vis_estimate.reshape(-1), wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
+                       normalisation="uvw", chunked=True)
         .reshape(m31image.pixels.shape)
         .squeeze()
     )
 
     psf_estimate = (
         hvox.compute_psf(
-            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+            uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
             xyz=direction_cosines.reshape(-1, 3),
-            wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+            wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
+            wgt_dirty=wgt_dirty,
             normalisation="uvw",
             chunked=True,
         )

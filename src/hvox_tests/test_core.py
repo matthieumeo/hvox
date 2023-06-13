@@ -108,25 +108,13 @@ class TestHVOX_dcos:
         epsilon,
         chunked,
     ):
-        vis_hvox = hvox.dirty2vis(
-            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-            xyz=direction_cosines.reshape(-1, 3),
-            dirty=model.pixels.data.reshape(-1),
-            wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
-            wgt_dirty=wgt_dirty,
-            w_term=w_term,
-            epsilon=epsilon,
-            chunked=chunked,
-        )
+        vis_hvox = hvox.dirty2vis(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+                                  xyz=direction_cosines.reshape(-1, 3), dirty=model.pixels.data.reshape(-1),
+                                  w_term=w_term, epsilon=epsilon, chunked=chunked)
 
-        dirty_hvox = hvox.vis2dirty(
-            uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-            xyz=direction_cosines.reshape(-1, 3),
-            vis=vis_hvox.reshape(-1),
-            w_term=w_term,
-            epsilon=epsilon,
-            chunked=chunked,
-        )
+        dirty_hvox = hvox.vis2dirty(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+                                    xyz=direction_cosines.reshape(-1, 3), vis=vis_hvox.reshape(-1), w_term=w_term,
+                                    epsilon=epsilon, chunked=chunked)
         return vis_hvox, dirty_hvox
 
     @pytest.fixture

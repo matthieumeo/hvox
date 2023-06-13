@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from tqdm import tqdm
 
 import numpy as np
 
@@ -26,9 +27,8 @@ except:
 
 
 def vis2dirty(visibility, fov, npixel,
-              phasecentre, w_term, epsilon, chunked, max_mem, precision):
+              phasecentre, w_term, epsilon, chunked, max_mem, precision, nthreads):
 
-    dtype_r = np.single if precision == "single" else np.double
     dtype_c = np.csingle if precision == "single" else np.cdouble
 
     nrows, nbaselines, vnchan, vnpol = visibility.vis.shape
@@ -43,15 +43,19 @@ def vis2dirty(visibility, fov, npixel,
     )
 
     direction_cosines, jacobian = get_direction_cosines(image)
-    wgt_dirty = 1 / jacobian.reshape(-1)
-
-    for pol in range(vnpol):
-        for chan in range(vnchan):
+    for pol in tqdm(range(vnpol)):
+        for chan in tqdm(range(vnchan), leave=False):
             image["pixels"].data[chan, pol] += (
-                hvox.vis2dirty(uvw=visibility.visibility_acc.uvw_lambda[:, :, chan, :].reshape(-1, 3),
+                hvox.vis2dirty(uvw_l=visibility.visibility_acc.uvw_lambda[:, :, chan, :].reshape(-1, 3),
                                xyz=direction_cosines.reshape(-1, 3),
-                               vis=visibility.vis.data[:, :, chan, pol].reshape(-1).astype(dtype_c), w_term=w_term,
-                               epsilon=epsilon, chunked=chunked, max_mem=max_mem)
+                               vis=visibility.vis.data[:, :, chan, pol].ravel().astype(dtype_c),
+                               wgt_vis=visibility.visibility_acc.flagged_weight[:, :, chan, pol].ravel(),
+                               wgt_dirty=1./jacobian.ravel(),
+                               w_term=w_term,
+                               epsilon=epsilon,
+                               chunked=chunked,
+                               max_mem=max_mem,
+                               nthreads=nthreads)
                 .reshape(npixel, npixel)
             )
     return image
@@ -82,7 +86,7 @@ def create_parser():
 
     parser.add_argument(
         "-m",
-        "--msname",
+        "--ms_file",
         nargs=1,
         type=str,
         help="File name of MS"
@@ -91,7 +95,7 @@ def create_parser():
 
     parser.add_argument(
         "-f",
-        "--fitsname",
+        "--fits_file",
         nargs=1,
         type=str,
         help="File name of .fits file"
@@ -159,7 +163,7 @@ def create_parser():
         "--epsilon",
         nargs="?",
         type=float,
-        default=1e-3,
+        default=1e-4,
         help="Requested accuracy"
     )
 
@@ -182,10 +186,18 @@ def create_parser():
     )
 
     parser.add_argument(
+        "--nthreads",
+        nargs="?",
+        type=int,
+        default=None,
+        help="Defaults to N_core / 2"
+    )
+
+    parser.add_argument(
         "--max_mem",
         nargs="?",
         type=int,
-        default=500,
+        default=512,
         help="Maximum size for per HVOX chunk, in MB"
     )
 
@@ -234,7 +246,7 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    msname, fits_name = args.msname[0], args.fitsname[0]
+    ms_file, fits_file = args.ms_file[0], args.fits_file[0]
 
     if (args.start_chan is not None) and (args.end_chan is not None):
         channum = range(args.start_chan, args.end_chan + 1)
@@ -244,8 +256,8 @@ def main():
     ack, datacolumn, average_channels = args.casacore, args.datacolumn, args.average_channels
 
     # Create visibility object from ms
-    visibilities = create_visibility_from_ms(msname=msname, channum=channum, ack=ack, datacolumn=datacolumn,
-                                           average_channels=average_channels)
+    visibilities = create_visibility_from_ms(msname=ms_file, channum=channum, ack=ack, datacolumn=datacolumn,
+                                             average_channels=average_channels)
 
     ra, dec, frame, equinox = args.ra, args.dec, args.frame, args.equinox
 
@@ -272,10 +284,12 @@ def main():
             epsilon=args.epsilon,
             chunked=args.chunked,
             max_mem=args.max_mem,
-            precision=args.precision)
+            precision=args.precision,
+            nthreads=args.nthreads,
+        )
         field_id = visibility.meta['MSV2']['FIELD_ID']
         data_desc_id = visibility.meta['MSV2']['DATA_DESC_ID']
-        fits_fname = f"{fits_name}_FIELD_ID-{field_id}_DATA_DESC_ID-{data_desc_id}.fits"
+        fits_fname = f"{fits_file}_FIELD_ID-{field_id}_DATA_DESC_ID-{data_desc_id}.fits"
         image.image_acc.export_to_fits(fits_fname)
 
     exit_code = 2

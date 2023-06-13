@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+* correct reference
+* add citation file
+* update installation setup and instructions
+* Revert "update authors"
 * update authors
 * ignore tart-related files
 * [bugfix] update nufft call after NUFFT args update

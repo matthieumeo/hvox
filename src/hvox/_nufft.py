@@ -6,29 +6,24 @@ import pycsou.operator.linop as pycl
 import pycsou.util as pycu
 
 
-def nufft_builder(xyz, vlambda, epsilon, chunked, max_mem):
-    kwargs = {}
-    if epsilon is None:
-        epsilon = 1e-6
-        warnings.warn("Epsilon is not defined, using NUFFT with default `eps=1e-6`.")
-
-    if chunked:
-        max_mem = max_mem if max_mem is not None else 500
-        kwargs.update(
-            {
-                "chunked": True,
-                "parallel": True,
-                "nthreads": multiprocessing.cpu_count() // 4,
-            }
-        )
-    else:
-        kwargs.update({"nthreads": multiprocessing.cpu_count()})
+def nufft_builder(xyz, vlambda, real, epsilon, nufft_kwargs):
+    # Get NUFFT args
+    max_mem = nufft_kwargs.get("max_mem", 512)
+    nufft_kwargs = dict(
+        enable_warnings=nufft_kwargs.get("enable_warnings", True),
+        chunked=nufft_kwargs.get("chunked", True),
+        parallel=nufft_kwargs.get("parallel", True),
+        nthreads=nufft_kwargs.get("nthreads", None),
+    )
+    if nufft_kwargs["nthreads"] is None:
+        div = 4 if nufft_kwargs["chunked"] else 2
+        nufft_kwargs.update({"nthreads": multiprocessing.cpu_count() // div})
 
     nufft = pycl.NUFFT.type3(
-        x=xyz, z=2 * np.pi * vlambda, real=True, isign=-1, eps=epsilon, **kwargs
+        x=xyz, z=2 * np.pi * vlambda, real=real, isign=-1, eps=epsilon, **nufft_kwargs
     )
 
-    if chunked:
+    if nufft_kwargs["chunked"]:
         # auto-determine a good x/z chunking strategy
         nufft.allocate(*nufft.auto_chunk(max_mem=max_mem))
         xyz_idx, xyz_chunks = nufft.order("x")  # get a good x-ordering
@@ -36,10 +31,10 @@ def nufft_builder(xyz, vlambda, epsilon, chunked, max_mem):
         nufft = pycl.NUFFT.type3(
             x=xyz[xyz_idx],
             z=2 * np.pi * vlambda[uvw_lambda_idx],
-            real=True,
+            real=real,
             isign=-1,
             eps=epsilon,
-            **kwargs
+            **nufft_kwargs
         )
 
         nufft.allocate(xyz_chunks, uvw_lambda_chunks, direct_eval_threshold=1e4)
@@ -80,11 +75,11 @@ def nufft_vis2dirty(
     xyz,
     uvw_lambda,
     visibilities,
+    real,
     epsilon,
-    chunked,
-    max_mem,
+    nufft_kwargs
 ):
-    nufft, sort_func = nufft_builder(xyz, uvw_lambda, epsilon, chunked, max_mem)
+    nufft, sort_func = nufft_builder(xyz, uvw_lambda, real, epsilon, nufft_kwargs)
     input_data = sort_func["vl"]["fw"](visibilities)
     input_data = pycu.view_as_real(input_data)
     dirty = nufft.adjoint(input_data)
@@ -96,11 +91,11 @@ def nufft_dirty2vis(
     xyz,
     uvw_lambda,
     dirty,
+    real,
     epsilon,
-    chunked,
-    max_mem,
+    nufft_kwargs
 ):
-    nufft, sort_func = nufft_builder(xyz, uvw_lambda, epsilon, chunked, max_mem)
+    nufft, sort_func = nufft_builder(xyz, uvw_lambda, real, epsilon, nufft_kwargs)
 
     input_data = sort_func["dc"]["fw"](dirty)
     visibilities = pycu.view_as_complex(nufft(input_data))

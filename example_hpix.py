@@ -89,33 +89,26 @@ if __name__ == "__main__":
     haslam = haslam_full[haslam_coi]
 
     print("Simulating visibilities")
-    vis_estimate = hvox.dirty2vis(
-        uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-        xyz=lmn.reshape(-1, 3),
-        dirty=haslam.reshape(-1),
-        wgt=vis.visibility_acc.flagged_weight.reshape(-1),
-        mesh="hpix",
-        normalisation="xyz",
-        chunked=True,
-    )
+    vis_estimate = hvox.dirty2vis(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+                                  xyz=lmn.reshape(-1, 3),
+                                  dirty=haslam.reshape(-1),
+                                  wgt=vis.visibility_acc.flagged_weight.reshape(-1),
+                                  normalisation="xyz",
+                                  chunked=True)
 
     print("Estimating dirty image")
-    sky_estimate = hvox.vis2dirty(
-        uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
-        xyz=lmn.reshape(-1, 3),
-        vis=vis_estimate.reshape(-1),
-        mesh="hpix",
-        wgt=vis.visibility_acc.flagged_weight.reshape(-1),
-        normalisation="xyz",
-        chunked=True,
-    )
+    sky_estimate = hvox.vis2dirty(uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+                                  xyz=lmn.reshape(-1, 3),
+                                  vis=vis_estimate.reshape(-1),
+                                  wgt_vis=vis.visibility_acc.flagged_weight.reshape(-1),
+                                  normalisation="xyz",
+                                  chunked=True)
 
     print("Estimating PSF")
     psf_estimate = hvox.compute_psf(
-        uvw=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
+        uvw_l=vis.visibility_acc.uvw_lambda.reshape(-1, 3),
         xyz=lmn.reshape(-1, 3),
         xyz_center=lmn_center,
-        mesh="hpix",
         wgt=vis.visibility_acc.flagged_weight.reshape(-1),
         normalisation="both",
         chunked=True,

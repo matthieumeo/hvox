@@ -55,7 +55,8 @@ def vis2dirty(visibility, fov, npixel,
                                epsilon=epsilon,
                                chunked=chunked,
                                max_mem=max_mem,
-                               nthreads=nthreads)
+                               nthreads=nthreads,
+                               enable_warnings=False)
                 .reshape(npixel, npixel)
             )
     return image

@@ -5,7 +5,7 @@
    </p>
    <h1> HVOX </h1>
 
-.. image:: https://img.shields.io/badge/Python-3.9%20|%203.10%20|%203.11-blue
+.. image:: https://img.shields.io/badge/Python-3.9%20|%203.10%20-blue
    :target: https://www.python.org/downloads/
    :alt: Python 3.9 | 3.10
 .. image:: https://img.shields.io/badge/License-MIT-yellow.svg

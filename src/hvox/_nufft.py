@@ -2,8 +2,8 @@ import multiprocessing
 import warnings
 
 import numpy as np
-import pycsou.operator.linop as pycl
-import pycsou.util as pycu
+import pyxu.operator.linop as pxl
+import pyxu.util as pxu
 
 
 def nufft_builder(xyz, vlambda, real, epsilon, nufft_kwargs):
@@ -19,7 +19,7 @@ def nufft_builder(xyz, vlambda, real, epsilon, nufft_kwargs):
         div = 4 if nufft_kwargs["chunked"] else 2
         nufft_kwargs.update({"nthreads": multiprocessing.cpu_count() // div})
 
-    nufft = pycl.NUFFT.type3(
+    nufft = pxl.NUFFT.type3(
         x=xyz, z=2 * np.pi * vlambda, real=real, isign=-1, eps=epsilon, **nufft_kwargs
     )
 
@@ -28,7 +28,7 @@ def nufft_builder(xyz, vlambda, real, epsilon, nufft_kwargs):
         nufft.allocate(*nufft.auto_chunk(max_mem=max_mem))
         xyz_idx, xyz_chunks = nufft.order("x")  # get a good x-ordering
         uvw_lambda_idx, uvw_lambda_chunks = nufft.order("z")  # get a good z-ordering
-        nufft = pycl.NUFFT.type3(
+        nufft = pxl.NUFFT.type3(
             x=xyz[xyz_idx],
             z=2 * np.pi * vlambda[uvw_lambda_idx],
             real=real,
@@ -81,7 +81,7 @@ def nufft_vis2dirty(
 ):
     nufft, sort_func = nufft_builder(xyz, uvw_lambda, real, epsilon, nufft_kwargs)
     input_data = sort_func["vl"]["fw"](visibilities)
-    input_data = pycu.view_as_real(input_data)
+    input_data = pxu.view_as_real(input_data)
     dirty = nufft.adjoint(input_data)
     dirty = sort_func["dc"]["bw"](dirty)
     return dirty
@@ -98,6 +98,6 @@ def nufft_dirty2vis(
     nufft, sort_func = nufft_builder(xyz, uvw_lambda, real, epsilon, nufft_kwargs)
 
     input_data = sort_func["dc"]["fw"](dirty)
-    visibilities = pycu.view_as_complex(nufft(input_data))
+    visibilities = pxu.view_as_complex(nufft(input_data))
     visibilities = sort_func["vl"]["bw"](visibilities)
     return visibilities

@@ -126,7 +126,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "NumPy [latest]": ("https://docs.scipy.org/doc/numpy/", None),
     "SciPy [latest]": ("https://docs.scipy.org/doc/scipy/reference", None),
-    "Pycsou [latest]": ("https://matthieumeo.github.io/pycsou/html/index", None),
+    "Pyxu [latest]": ("https://matthieumeo.github.io/pyxu/html/index", None),
     "dask [latest]": ("https://docs.dask.org/en/latest/", None),
     "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),

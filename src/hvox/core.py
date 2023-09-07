@@ -1,5 +1,5 @@
 import numpy as np
-import pycsou.util.ptype as pyct
+import pyxu.info.ptype as pyct
 from hvox import _nufft
 
 __all__ = ["vis2dirty", "dirty2vis", "compute_psf"]
@@ -21,7 +21,7 @@ def vis2dirty(
     r"""
     Converts visibilities to a dirty image using the HVOX algorithm [HVOXpaper]_.
 
-    This implementation relies on the finufft [FINUFFT]_ and Pycsou [Pycsou]_ packages.
+    This implementation relies on the finufft [FINUFFT]_ and Pyxu [Pyxu]_ packages.
     It supports a "chunked" strategy to subdivide the operation into smaller tasks or chunks to
     optimize memory allocation while keeping competitive performance.
 
@@ -53,9 +53,9 @@ def vis2dirty(
 
     kwargs: dict
         Extra kwargs passed to
-        :py:class:`~pycsou.operator.linop.fft.nufft.NUFFT`.
+        :py:class:`~pyxu.operator.linop.fft.nufft.NUFFT`.
 
-        Supported parameters for :py:func:`pycsou.operator.linop.fft.nufft.NUFFT.type3` are:
+        Supported parameters for :py:func:`pyxu.operator.linop.fft.nufft.NUFFT.type3` are:
 
             * enable_warnings: bool = True
             * chunked: bool = True
@@ -153,7 +153,7 @@ def dirty2vis(
     r"""
     Converts a dirty image to visibilities using the HVOX algorithm [HVOXpaper]_.
 
-    This implementation relies on the finufft [FINUFFT]_ and Pycsou [Pycsou]_ packages.
+    This implementation relies on the finufft [FINUFFT]_ and Pyxu [Pyxu]_ packages.
     It supports a "chunked" strategy to subdivide the operation into smaller tasks or chunks to
     optimize memory allocation while keeping competitive performance.
 
@@ -182,9 +182,9 @@ def dirty2vis(
             * "both": both.
     kwargs: dict
         Extra kwargs passed to
-        :py:class:`~pycsou.operator.linop.fft.nufft.NUFFT`.
+        :py:class:`~pyxu.operator.linop.fft.nufft.NUFFT`.
 
-        Supported parameters for :py:func:`pycsou.operator.linop.fft.nufft.NUFFT.type3` are:
+        Supported parameters for :py:func:`pyxu.operator.linop.fft.nufft.NUFFT.type3` are:
 
             * enable_warnings: bool = True
             * chunked: bool = True
@@ -297,7 +297,7 @@ def compute_psf(
     r"""
     Computes the point-spread function (PSF) using the HVOX algorithm [HVOXpaper]_.
 
-    This implementation relies on the finufft [FINUFFT]_ and Pycsou [Pycsou]_ packages.
+    This implementation relies on the finufft [FINUFFT]_ and Pyxu [Pyxu]_ packages.
     It supports a "chunked" strategy to subdivide the operation into smaller tasks or chunks to
     optimize memory allocation while keeping competitive performance.
 
@@ -327,9 +327,9 @@ def compute_psf(
 
     kwargs: dict
         Extra kwargs passed to
-        :py:class:`~pycsou.operator.linop.fft.nufft.NUFFT`.
+        :py:class:`~pyxu.operator.linop.fft.nufft.NUFFT`.
 
-        Supported parameters for :py:func:`pycsou.operator.linop.fft.nufft.NUFFT.type3` are:
+        Supported parameters for :py:func:`pyxu.operator.linop.fft.nufft.NUFFT.type3` are:
 
             * enable_warnings: bool = True
             * chunked: bool = True

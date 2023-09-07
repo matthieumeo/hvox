@@ -1,7 +1,7 @@
 .. raw:: html
 
    <p align="center">
-   <img align="center" src="doc/_images/hvox.png" alt="Pyxu logo" width=35%>
+   <img align="center" src="doc/_static/hvox.png" alt="HVOX logo" width=35%>
    </p>
    <h1> HVOX </h1>
 
